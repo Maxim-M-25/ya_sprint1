@@ -1,3 +1,5 @@
+"""Описание кастомных типов данных."""
+
 import datetime
 import uuid
 from dataclasses import dataclass, field
@@ -5,6 +7,8 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class Movie:
+    """Описание полей объекта Movie."""
+
     title: str
     description: str
     creation_date: datetime.datetime
@@ -17,6 +21,8 @@ class Movie:
 
 @dataclass(frozen=True)
 class Genre:
+    """Описание полей объекта Genre."""
+
     name: str
     description: str
     created: datetime.datetime
@@ -26,6 +32,8 @@ class Genre:
 
 @dataclass(frozen=True)
 class Person:
+    """Описание полей объекта Person."""
+
     full_name: str
     created: datetime.datetime
     modified: datetime.datetime
@@ -34,6 +42,8 @@ class Person:
 
 @dataclass(frozen=True)
 class PersonFilmwork:
+    """Описание полей объекта PersonFilmwork."""
+
     role: str
     created: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
@@ -43,6 +53,8 @@ class PersonFilmwork:
 
 @dataclass(frozen=True)
 class GenreFilmwork:
+    """Описание полей объекта GenreFilmwork."""
+
     created: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     genre_id: uuid.UUID = field(default_factory=uuid.uuid4)

@@ -11,26 +11,17 @@ class PostgresSaver(object):
 
     def __init__(self, pg_conn: _connection) -> None:
         """
-        init метод.
+        Init метод.
 
         Args:
             pg_conn: Соединение с БД
-
-        Returns:
-            None
         """
         self.pg_conn = pg_conn
         self.curs = self.pg_conn.cursor()
         self.csv_separator = '|'
 
     def _run_insert(self) -> None:
-        """
-        Метод для считывания данных из файла и отправку их в БД.
-
-        Returns:
-            None
-        """
-
+        """Метод для считывания данных из файла и отправку их в БД."""
         relations = {
             'movies': {
                 'table_name': 'film_work',
@@ -41,8 +32,8 @@ class PostgresSaver(object):
                     'creation_date',
                     'rating',
                     'created',
-                    'modified'
-                ]
+                    'modified',
+                ],
             },
             'persons': {
                 'table_name': 'person',
@@ -50,8 +41,8 @@ class PostgresSaver(object):
                     'id',
                     'full_name',
                     'created',
-                    'modified'
-                ]
+                    'modified',
+                ],
             },
             'genres': {
                 'table_name': 'genre',
@@ -60,8 +51,8 @@ class PostgresSaver(object):
                     'name',
                     'description',
                     'created',
-                    'modified'
-                ]
+                    'modified',
+                ],
             },
             'genre_film_work': {
                 'table_name': 'genre_film_work',
@@ -69,8 +60,8 @@ class PostgresSaver(object):
                     'id',
                     'genre_id',
                     'film_work_id',
-                    'created'
-                ]
+                    'created',
+                ],
             },
             'person_film_work': {
                 'table_name': 'person_film_work',
@@ -79,9 +70,9 @@ class PostgresSaver(object):
                     'person_id',
                     'film_work_id',
                     'role',
-                    'created'
-                ]
-            }
+                    'created',
+                ],
+            },
         }
 
         for file_name, table_info in relations.items():
@@ -101,11 +92,7 @@ class PostgresSaver(object):
 
         Args:
             data: словарь с извлечёнными данными
-
-        Returns:
-            None
         """
-
         self.movies = data['movies']
         self.persons = data['persons']
         self.genres = data['genres']
@@ -119,12 +106,7 @@ class PostgresSaver(object):
             return
 
     def _create_files(self) -> None:
-        """
-        Создаёт файлы с данными для каждой таблицы.
-
-        Returns:
-            None
-        """
+        """Создаёт файлы с данными для каждой таблицы."""
 
         with open('movies.csv', 'w', encoding='utf-8') as movies_file:
             wr = csv.writer(movies_file, delimiter=self.csv_separator)

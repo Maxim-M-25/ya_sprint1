@@ -1,10 +1,11 @@
-"""Експорт данных из sqlite БД."""
+"""Экспорт данных из sqlite БД."""
 
 import sqlite3
 import traceback
 from typing import Generator
 
-from sqlite_to_postgres.data_types import Genre, GenreFilmwork, Movie, Person, PersonFilmwork
+from sqlite_to_postgres.data_types import (Genre, GenreFilmwork, Movie, Person,
+                                           PersonFilmwork)
 
 
 class SQLiteExtractor(object):
@@ -12,15 +13,11 @@ class SQLiteExtractor(object):
 
     def __init__(self, connection: sqlite3.Connection) -> None:
         """
-        init метод.
+        Init метод.
 
         Args:
             connection: соединение с БД
-
-        Returns:
-            None
         """
-
         self.connection = connection
         self.connection.row_factory = sqlite3.Row
         self.curs = self.connection.cursor()
@@ -35,8 +32,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса Movie
         """
-
-        data = []
+        movies = []
         for row in generator:
             movie_id = row['id']
             title = row['title']
@@ -47,8 +43,8 @@ class SQLiteExtractor(object):
             created_at = row['created_at']
             updated_at = row['updated_at']
             movie = Movie(title, description, creation_date, movie_type, created_at, updated_at, rating, movie_id)
-            data.append(movie)
-        return data
+            movies.append(movie)
+        return movies
 
     def _collect_genres(self, generator: Generator) -> list:
         """
@@ -60,8 +56,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса Genre
         """
-
-        data = []
+        genres = []
         for row in generator:
             genre_id = row['id']
             name = row['name']
@@ -69,8 +64,8 @@ class SQLiteExtractor(object):
             created_at = row['created_at']
             updated_at = row['updated_at']
             genre = Genre(name, description, created_at, updated_at, genre_id)
-            data.append(genre)
-        return data
+            genres.append(genre)
+        return genres
 
     def _collect_persons(self, generator: Generator) -> list:
         """
@@ -82,16 +77,15 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса Person
         """
-
-        data = []
+        persons = []
         for row in generator:
             person_id = row['id']
             full_name = row['full_name']
             created_at = row['created_at']
             updated_at = row['updated_at']
             genre = Person(full_name, created_at, updated_at, person_id)
-            data.append(genre)
-        return data
+            persons.append(genre)
+        return persons
 
     def _collect_genres_filmworks(self, generator: Generator) -> list:
         """
@@ -103,16 +97,15 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса GenreFilmwork
         """
-
-        data = []
+        genres_filmworks = []
         for row in generator:
             relation_id = row['id']
             genre_id = row['genre_id']
             filmwork_id = row['film_work_id']
             created = row['created_at']
             genre = GenreFilmwork(created, relation_id, genre_id, filmwork_id)
-            data.append(genre)
-        return data
+            genres_filmworks.append(genre)
+        return genres_filmworks
 
     def _collect_persons_filmworks(self, generator: Generator) -> list:
         """
@@ -124,8 +117,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса PersonFilmwork
         """
-
-        data = []
+        persons_film_works = []
         for row in generator:
             relation_id = row['id']
             person_id = row['person_id']
@@ -133,8 +125,8 @@ class SQLiteExtractor(object):
             role = row['role']
             created = row['created_at']
             genre = PersonFilmwork(role, created, relation_id, person_id, film_work_id)
-            data.append(genre)
-        return data
+            persons_film_works.append(genre)
+        return persons_film_works
 
     def _get_generator(self, query: str) -> Generator:
         """
@@ -143,16 +135,15 @@ class SQLiteExtractor(object):
         Args:
             query: sql запрос
 
-        Returns:
+        Return:
             Generator: генератор полученный в результате выполнения sql запроса
         """
-
         try:
             self.curs.execute(query)
             while data := self.curs.fetchmany(1000):
                 for part in data:
                     yield part
-        except BaseException:
+        except Exception:
             print('ERROR - {error}'.format(error=traceback.format_exc()))
 
     def _load_movies(self) -> list:
@@ -162,8 +153,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса Movie
         """
-
-        query = "SELECT * FROM film_work;"
+        query = 'SELECT * FROM film_work;'
         gen = self._get_generator(query)
         return self._collect_movies(gen)
 
@@ -174,8 +164,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса Person
         """
-
-        query = "SELECT * FROM person;"
+        query = 'SELECT * FROM person;'
         gen = self._get_generator(query)
         return self._collect_persons(gen)
 
@@ -186,8 +175,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса Genre
         """
-
-        query = "SELECT * FROM genre;"
+        query = 'SELECT * FROM genre;'
         gen = self._get_generator(query)
         return self._collect_genres(gen)
 
@@ -198,8 +186,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса GenreFilmwork
         """
-
-        query = "SELECT * FROM genre_film_work;"
+        query = 'SELECT * FROM genre_film_work;'
         gen = self._get_generator(query)
         return self._collect_genres_filmworks(gen)
 
@@ -210,8 +197,7 @@ class SQLiteExtractor(object):
         Returns:
             list: список объектов класса PersonFilmwork
         """
-
-        query = "SELECT * FROM person_film_work;"
+        query = 'SELECT * FROM person_film_work;'
         gen = self._get_generator(query)
         return self._collect_persons_filmworks(gen)
 
@@ -222,12 +208,18 @@ class SQLiteExtractor(object):
         Returns:
             dict: словарь с выгруженными из БД данными
         """
-
         movies = self._load_movies()
         genres = self._load_genres()
         persons = self._load_persons()
         persons_filmworks = self._load_persons_filmworks()
         genres_filmworks = self._load_genres_filmworks()
-        result = {'movies': movies, 'persons': persons, 'genres': genres,
-                  'relations': {'persons_film_works': persons_filmworks, 'genres_film_works': genres_filmworks}}
-        return result
+        return {
+            'movies': movies,
+            'persons': persons,
+            'genres': genres,
+            'relations':
+                {
+                    'persons_film_works': persons_filmworks,
+                    'genres_film_works': genres_filmworks,
+                },
+        }
