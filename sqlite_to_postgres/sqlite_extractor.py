@@ -146,7 +146,7 @@ class SQLiteExtractor(object):
         except Exception:
             print('ERROR - {error}'.format(error=traceback.format_exc()))
 
-    def _load_movies(self) -> list:
+    def get_movies(self) -> list:
         """
         Управляет процессом создания списка объектов класса Movie.
 
@@ -157,7 +157,7 @@ class SQLiteExtractor(object):
         gen = self._get_generator(query)
         return self._collect_movies(gen)
 
-    def _load_persons(self) -> list:
+    def get_persons(self) -> list:
         """
         Управляет процессом создания списка объектов класса Person.
 
@@ -168,7 +168,7 @@ class SQLiteExtractor(object):
         gen = self._get_generator(query)
         return self._collect_persons(gen)
 
-    def _load_genres(self) -> list:
+    def get_genres(self) -> list:
         """
         Управляет процессом создания списка объектов класса Genre.
 
@@ -179,7 +179,7 @@ class SQLiteExtractor(object):
         gen = self._get_generator(query)
         return self._collect_genres(gen)
 
-    def _load_genres_filmworks(self) -> list:
+    def get_genres_film_works(self) -> list:
         """
         Управляет процессом создания списка объектов класса GenreFilmwork.
 
@@ -190,7 +190,7 @@ class SQLiteExtractor(object):
         gen = self._get_generator(query)
         return self._collect_genres_filmworks(gen)
 
-    def _load_persons_filmworks(self) -> list:
+    def get_persons_film_works(self) -> list:
         """
         Управляет процессом создания списка объектов класса PersonFilmwork.
 
@@ -201,18 +201,18 @@ class SQLiteExtractor(object):
         gen = self._get_generator(query)
         return self._collect_persons_filmworks(gen)
 
-    def extract_movies(self) -> dict:
+    def extract_all_data(self) -> dict:
         """
         Основной метод выгрузки данных из БД.
 
         Returns:
             dict: словарь с выгруженными из БД данными
         """
-        movies = self._load_movies()
-        genres = self._load_genres()
-        persons = self._load_persons()
-        persons_filmworks = self._load_persons_filmworks()
-        genres_filmworks = self._load_genres_filmworks()
+        movies = self.get_movies()
+        genres = self.get_genres()
+        persons = self.get_persons()
+        persons_filmworks = self.get_persons_film_works()
+        genres_filmworks = self.get_genres_film_works()
         return {
             'movies': movies,
             'persons': persons,

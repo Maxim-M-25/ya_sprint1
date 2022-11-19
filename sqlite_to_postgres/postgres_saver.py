@@ -1,9 +1,7 @@
 """Импорт данных из sqlite в postgresql."""
 
-import csv
-from traceback import format_exc
-
 from psycopg2.extensions import connection as _connection
+from psycopg2.extras import execute_values
 
 
 class PostgresSaver(object):
@@ -20,119 +18,60 @@ class PostgresSaver(object):
         self.curs = self.pg_conn.cursor()
         self.csv_separator = '|'
 
-    def _run_insert(self) -> None:
-        """Метод для считывания данных из файла и отправку их в БД."""
-        relations = {
-            'movies': {
-                'table_name': 'film_work',
-                'table_fields': [
-                    'id',
-                    'title',
-                    'description',
-                    'creation_date',
-                    'rating',
-                    'created',
-                    'modified',
-                ],
-            },
-            'persons': {
-                'table_name': 'person',
-                'table_fields': [
-                    'id',
-                    'full_name',
-                    'created',
-                    'modified',
-                ],
-            },
-            'genres': {
-                'table_name': 'genre',
-                'table_fields': [
-                    'id',
-                    'name',
-                    'description',
-                    'created',
-                    'modified',
-                ],
-            },
-            'genre_film_work': {
-                'table_name': 'genre_film_work',
-                'table_fields': [
-                    'id',
-                    'genre_id',
-                    'film_work_id',
-                    'created',
-                ],
-            },
-            'person_film_work': {
-                'table_name': 'person_film_work',
-                'table_fields': [
-                    'id',
-                    'person_id',
-                    'film_work_id',
-                    'role',
-                    'created',
-                ],
-            },
-        }
+    def save_movies(self, movies: list) -> None:
+        movies_array = []
+        for movie in movies:
+            data_tuple = (
+                movie.id, movie.title, movie.description, movie.creation_date, movie.rating, movie.type, movie.created,
+                movie.modified)
+            movies_array.append(data_tuple)
+        sql_query = f'INSERT INTO film_work (id, title, description, creation_date, rating, type, created, modified) VALUES %s ON CONFLICT DO NOTHING;'
 
-        for file_name, table_info in relations.items():
-            with open('{file_name}.csv'.format(file_name=file_name), 'r', encoding='utf-8') as file:
-                self.curs.execute(
-                    'CREATE TEMP TABLE tmp_table (LIKE {table_name} INCLUDING DEFAULTS) ON COMMIT DROP;'.format(
-                        table_name=table_info['table_name']))
-                sql = "COPY tmp_table FROM STDIN DELIMITER '{sep}' CSV".format(sep=self.csv_separator)
-                self.curs.copy_expert(sql, file)
-                self.curs.execute('INSERT INTO {table_name} SELECT * FROM tmp_table ON CONFLICT DO NOTHING;'.format(
-                    table_name=table_info['table_name']))
-                self.pg_conn.commit()
+        self._insert_data(sql_query, movies_array)
 
-    def save_all_data(self, data: dict) -> None:
-        """
-        Основной метод класса, отвечает за управление процессом сохранения данных в БД.
+    def save_genres(self, genres: list) -> None:
+        genres_array = []
+        for genre in genres:
+            data_tuple = (
+                genre.id, genre.name, genre.description, genre.created,
+                genre.modified)
+            genres_array.append(data_tuple)
+        sql_query = f'INSERT INTO genre (id, name, description, created, modified) VALUES %s ON CONFLICT DO NOTHING;'
 
-        Args:
-            data: словарь с извлечёнными данными
-        """
-        self.movies = data['movies']
-        self.persons = data['persons']
-        self.genres = data['genres']
-        self.persons_film_works = data['relations']['persons_film_works']
-        self.genres_film_works = data['relations']['genres_film_works']
-        try:
-            self._create_files()
-            self._run_insert()
-        except BaseException:
-            print('ERROR:\n{error}'.format(error=format_exc()))
-            return
+        self._insert_data(sql_query, genres_array)
 
-    def _create_files(self) -> None:
-        """Создаёт файлы с данными для каждой таблицы."""
+    def save_persons(self, persons: list) -> None:
+        persons_array = []
+        for person in persons:
+            data_tuple = (
+                person.id, person.full_name, person.created, person.modified)
+            persons_array.append(data_tuple)
+        sql_query = f'INSERT INTO person (id, full_name, created, modified) VALUES %s ON CONFLICT DO NOTHING;'
 
-        with open('movies.csv', 'w', encoding='utf-8') as movies_file:
-            wr = csv.writer(movies_file, delimiter=self.csv_separator)
-            for movie in self.movies:
-                wr.writerow(
-                    [movie.id, movie.title, movie.description, movie.creation_date, movie.rating, movie.type,
-                     movie.created, movie.modified])
+        self._insert_data(sql_query, persons_array)
 
-        with open('persons.csv', 'w', encoding='utf-8') as persons_file:
-            wr = csv.writer(persons_file, delimiter=self.csv_separator)
-            for person in self.persons:
-                wr.writerow([person.id, person.full_name, person.created, person.modified])
+    def save_genres_film_works(self, genres_film_works: list) -> None:
+        genres_film_works_array = []
+        for genre_film_work in genres_film_works:
+            data_tuple = (
+                genre_film_work.id, genre_film_work.genre_id, genre_film_work.film_work_id, genre_film_work.created)
+            genres_film_works_array.append(data_tuple)
+        sql_query = f'INSERT INTO genre_film_work (id, genre_id, film_work_id, created) VALUES %s ON CONFLICT DO NOTHING;'
 
-        with open('genres.csv', 'w', encoding='utf-8') as genres_file:
-            wr = csv.writer(genres_file, delimiter=self.csv_separator)
-            for genre in self.genres:
-                wr.writerow([genre.id, genre.name, genre.description, genre.created, genre.modified])
+        self._insert_data(sql_query, genres_film_works_array)
 
-        with open('genre_film_work.csv', 'w', encoding='utf-8') as genre_film_work_file:
-            wr = csv.writer(genre_film_work_file, delimiter=self.csv_separator)
-            for genre_film_work in self.genres_film_works:
-                wr.writerow([genre_film_work.id, genre_film_work.genre_id, genre_film_work.film_work_id,
-                             genre_film_work.created])
+    def save_persons_film_works(self, persons_film_works: list) -> None:
+        persons_film_works_array = []
+        for person_film_work in persons_film_works:
+            data_tuple = (
+                person_film_work.id, person_film_work.person_id, person_film_work.film_work_id, person_film_work.role,
+                person_film_work.created)
+            persons_film_works_array.append(data_tuple)
+        sql_query = f'INSERT INTO person_film_work (id, person_id, film_work_id, role, created) VALUES %s ON CONFLICT (id) DO NOTHING;'
 
-        with open('person_film_work.csv', 'w', encoding='utf-8') as person_film_work_file:
-            wr = csv.writer(person_film_work_file, delimiter=self.csv_separator)
-            for person_film_work in self.persons_film_works:
-                wr.writerow([person_film_work.id, person_film_work.person_id, person_film_work.film_work_id,
-                             person_film_work.role, person_film_work.created])
+        self._insert_data(sql_query, persons_film_works_array)
+
+    def _insert_data(self, query: str, data_list: list) -> None:
+        execute_values(
+            self.curs, query, data_list, template=None
+        )

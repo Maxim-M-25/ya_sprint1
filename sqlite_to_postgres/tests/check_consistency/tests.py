@@ -13,7 +13,7 @@ def test_data() -> None:
     dsl = {'dbname': 'movies_database', 'user': 'app', 'password': '123qwe', 'host': '127.0.0.1', 'port': 5432}
     with sqlite3.connect('db.sqlite') as sqlite_conn, psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
         sqlite_extractor = SQLiteExtractor(sqlite_conn)
-        sql_data = sqlite_extractor.extract_movies()
+        sql_data = sqlite_extractor.extract_all_data()
         pg_curs = pg_conn.cursor()
 
         custom_data_array = {
@@ -26,6 +26,7 @@ def test_data() -> None:
 
         for table_name, table_data in custom_data_array.items():
             for data_item in table_data:
+                print(f'table: {table_name} | uuid: {data_item.id}')
                 sql = "SELECT * FROM {table_name} WHERE id = '{uuid}'".format(table_name=table_name, uuid=data_item.id)
                 pg_curs.execute(sql)
                 db_response = pg_curs.fetchall()
